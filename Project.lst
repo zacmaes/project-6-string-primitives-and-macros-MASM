@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 16:10:37
+Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 22:51:38
 <Project Six: Dolby Uses String Primitives & Macros     (Pro  Page 1 - 1
 
 
@@ -61,30 +61,68 @@ Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 16:10:37
 				; Displays the prompt input parameter to the user and collects their keyboard input into
 				;	a location in memory (the output). 
 				;
-				; Preconditions:
+				; Preconditions: prompt, emptyStr, and counter values must be established variables
+				;		within .data section and passed to this macro.
 				;
 				; Receives:
+				;		FOR READSTRING:
+				;		-EDX as address of buffer
+				;		-ECX as sizeof buffer
+
+				;		8] =
+				;		8] =
+				;		8] =
+				;		8] =
+				;		8] =
+				;		8] =
+				;		8] = 
 				;
 				;
-				; returns: 
+				; returns: counter number of read strings, user inputted string (emptyString)
 				; ---------------------------------------------------------------------------------
-				;mGetString MACRO prompt
+				mGetString MACRO prompt, emptyStr, counter
+					PUSH EDX
+					PUSH ECX
+					PUSH EAX
+
+					MOV EDX, OFFSET prompt
+					CALL WriteString
+					CALL CrLf
+
+					MOV EDX, OFFSET emptyStr	; point to buffer
+					MOV ECX, SIZEOF emptyStr	; specify max characters
+					CALL ReadString				; input the string
+					MOV counter, EAX			; number of characters read is saved
+
+
+					POP EAX
+					POP ECX
+					POP EDX
+					
+
+				ENDM
 
 
 
 				; ---------------------------------------------------------------------------------
 				; Name: mDisplayString
 				;
-				; Description:
+				; Prints the string that is stored in the passed memory location
 				;
-				; Preconditions: 
+				; Preconditions: string_input must be defined string in .data section
 				;
-				; Receives:
+				; Receives:	string_input passed in parameter
 				;
 				;
-				; returns: 
+				; returns: Writes the string_input to the terminal.
 				; ---------------------------------------------------------------------------------
-				;mDisplayString MACRO prompt
+				mDisplayString MACRO string_input
+					PUSH EDX
+					MOV EDX, OFFSET string_input
+					CALL WriteString
+					CALL CrLf
+					POP EDX
+				ENDM
 
 				; (insert constant definitions here)
 
@@ -416,6 +454,32 @@ Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 16:10:37
 	   64 77 69 6C 6C
 	   21 00
 
+ 00000619  00000032 [		collected_string	 BYTE 50 DUP(0)						; collected user string input buffer
+	    00
+	   ]
+ 0000064B 00000000		string_byte_counter  DWORD ?							; holds counter
+
+ 0000064F 2D 2D 2D 2D 2D	test_line	BYTE "-----------------------------------------------------------------",0
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   2D 2D 2D 2D 2D
+	   00
+
+ 00000691 00000000		converted_int		SDWORD ?	; stores the converted int from ReadVal
+ 00000695  0000000A [		store_array			DWORD 10 DUP(?)		; stores all 10 converted ints
+	    00000000
+	   ]
+
+
 
  00000000			.code
  00000000			main PROC
@@ -431,31 +495,42 @@ Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 16:10:37
  0000001E  68 000001FD R		PUSH OFFSET instruction_4
  00000023  68 0000026C R		PUSH OFFSET instruction_5
  00000028  68 000002C3 R		PUSH OFFSET instruction_6
- 0000002D  E8 0000001B			Call Introduction
+ 0000002D  E8 00000050			Call Introduction
 
 				; ReadVal Procedure.....lloop it
-					;PUSH OFFSET user_prompt_1
-					;PUSH OFFSET user_error_message
-					;PUSH OFFSET user_error_prompt
-					;Call ReadVal
+ 00000032  B9 0000000A			MOV ECX, 10			;ReadVal loop counter
+ 00000037				_10ReadValLoops:
+ 00000037  68 0000035A R		PUSH OFFSET user_prompt_1
+ 0000003C  68 00000619 R		PUSH OFFSET collected_string
+ 00000041  FF 35 0000064B R		PUSH string_byte_counter
+ 00000047  68 000003A4 R		PUSH OFFSET user_error_message
+ 0000004C  68 00000416 R		PUSH OFFSET user_error_prompt
+ 00000051  E8 00000057			Call ReadVal
+ 00000056  E2 DF				LOOP _10ReadValLoops
 
 				; WriteVal
 					;Call WriteVal
 
+					
+
+
+ 00000058  E8 00000000 E		CALL CrLf
+ 0000005D  E8 00000000 E		CALL CrLf
+ 00000062  E8 00000000 E		CALL CrLf
 
 				; FAREWELL
- 00000032  BA 000005A9 R	MOV EDX, OFFSET farewell_message
- 00000037  E8 00000000 E	CALL CrLf
- 0000003C  E8 00000000 E	CALL WriteString
- 00000041  E8 00000000 E	CALL CrLf
+ 00000067  BA 000005A9 R	MOV EDX, OFFSET farewell_message
+ 0000006C  E8 00000000 E	CALL CrLf
+ 00000071  E8 00000000 E	CALL WriteString
+ 00000076  E8 00000000 E	CALL CrLf
 
 
 				; Write a test program in main which uses the ReadVal and WriteVal procedures
 
 					Invoke ExitProcess,0	; exit to operating system
- 00000046  6A 00	   *	    push   +000000000h
- 00000048  E8 00000000 E   *	    call   ExitProcess
- 0000004D			main ENDP
+ 0000007B  6A 00	   *	    push   +000000000h
+ 0000007D  E8 00000000 E   *	    call   ExitProcess
+ 00000082			main ENDP
 
 				; (insert additional procedures here)
 
@@ -464,13 +539,9 @@ Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 16:10:37
 				;
 				; Introduces the program and instructions to the user.
 				;
-				; Preconditions: Preconditions are conditions that need to be true for the
-				;     procedure to work, like the type of the input provided or the state a
-				;     certain register need to be in.
+				; Preconditions: all introduction strings must be defined in data and pushed to stack.
 				;
-				; Postconditions: Postconditions are any changes the procedure makes that are not
-				;     part of the returns. If any registers are changed and not restored, they
-				;     should be described here.
+				; Postconditions: N/A
 				;
 				; Receives: 
 				;		[EBP+8]  = OFFSET instruction_6
@@ -483,61 +554,138 @@ Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 16:10:37
 				;		[EBP+36] = OFFSET introduction_2
 				;		[EBP+40] = OFFSET introduction_1
 				;
-				; Returns: Returns is the output of the procedure. Because assembly procedures don’t
-				;     return data like high-level languages, returns should describe all the data
-				;     the procedure intended to change. Parameters and global variables that the
-				;     procedure altered should be described here. Registers should only be mentioned
-				;     if you are trying to pass data back in them.
+				; Returns: Writes strings to the terminal.
 				; ---------------------------------------------------------------------------------
- 0000004D			Introduction PROC
- 0000004D  55				PUSH EBP					; Base Pointer	
- 0000004E  8B EC			MOV  EBP, ESP	
- 00000050  60				PUSHAD						; Preserve all registers
+ 00000082			Introduction PROC
+ 00000082  55				PUSH EBP					; Base Pointer	
+ 00000083  8B EC			MOV  EBP, ESP	
+ 00000085  60				PUSHAD						; Preserve all registers
 
- 00000051  B9 00000009			MOV ECX, 9					; set loop counter
- 00000056  BB 00000028			MOV EBX, 40					; set base offset
+ 00000086  B9 00000009			MOV ECX, 9					; set loop counter
+ 0000008B  BB 00000028			MOV EBX, 40					; set base offset
 
- 0000005B				_introLoop:
- 0000005B  8B 54 1D 00				MOV EDX, [EBP+EBX]
- 0000005F  E8 00000000 E			CALL WriteString
- 00000064  E8 00000000 E			CALL CrLf
- 00000069  E8 00000000 E			CALL CrLf
- 0000006E  83 EB 04				SUB EBX, 4
- 00000071  E2 E8				LOOP _introLoop
+ 00000090				_introLoop:
+ 00000090  8B 54 1D 00				MOV EDX, [EBP+EBX]
+ 00000094  E8 00000000 E			CALL WriteString
+ 00000099  E8 00000000 E			CALL CrLf
+ 0000009E  E8 00000000 E			CALL CrLf
+ 000000A3  83 EB 04				SUB EBX, 4
+ 000000A6  E2 E8				LOOP _introLoop
 
- 00000073  61				POPAD   
- 00000074  5D				POP EBP
- 00000075  C2 0024			RET	36
- 00000078			Introduction ENDP
+ 000000A8  61				POPAD   
+ 000000A9  5D				POP EBP
+ 000000AA  C2 0024			RET	36
+ 000000AD			Introduction ENDP
 
 				; ---------------------------------------------------------------------------------
 				; Name: ReadVal
 				;
-				; The description of the procedure should be like a section comment, summarizing
-				;     the overall goal of the blocks of code within the procedure.
+				; ReadVal invokes the mGetString macro to get a string from the user. It then validates 
+				;		if the string input can be converted to a number. If not, it asks the user to 
+				;		input a new number string.
 				;
-				; Preconditions: Preconditions are conditions that need to be true for the
-				;     procedure to work, like the type of the input provided or the state a
-				;     certain register need to be in.
+				; Preconditions: areas in memory where string will be saved are initialized.
+				;		prompts are initialized in data, string_byte_counter initialized.
 				;
-				; Postconditions: Postconditions are any changes the procedure makes that are not
-				;     part of the returns. If any registers are changed and not restored, they
-				;     should be described here.
+				; Postconditions: N/A
 				;
-				; Receives: Receives is like the input of a procedure; it describes everything
-				;     the procedure is given to work. Parameters, registers, and global variables
-				;     the procedure takes as inputs should be described here.
+				; Receives: 
+				;			PUSH OFFSET user_prompt_1
+				;			PUSH OFFSET collected_string
+				;			PUSH string_byte_counter
+				;			PUSH OFFSET user_error_message
+				;			PUSH OFFSET user_error_prompt
+				;			Call ReadVal
 				;
-				; Returns: Returns is the output of the procedure. Because assembly procedures don’t
-				;     return data like high-level languages, returns should describe all the data
-				;     the procedure intended to change. Parameters and global variables that the
-				;     procedure altered should be described here. Registers should only be mentioned
-				;     if you are trying to pass data back in them.
+				; Returns: returns the converted sdword number
 				; ---------------------------------------------------------------------------------
- 00000078			ReadVal PROC
+ 000000AD			ReadVal PROC
+ 000000AD  55				PUSH EBP
+ 000000AE  8B EC			MOV  EBP, ESP
+ 000000B0  60				PUSHAD
 
- 00000078  C3			RET
- 00000079			ReadVal ENDP
+ 000000B1  BF 00000695 R		MOV EDI, OFFSET store_array				; point edi to beginning of array
+
+ 000000B6				_getString:
+						mGetString user_prompt_1, collected_string, string_byte_counter
+ 000000B6  52		     1		PUSH EDX
+ 000000B7  51		     1		PUSH ECX
+ 000000B8  50		     1		PUSH EAX
+ 000000B9  BA 0000035A R     1		MOV EDX, OFFSET user_prompt_1
+ 000000BE  E8 00000000 E     1		CALL WriteString
+ 000000C3  E8 00000000 E     1		CALL CrLf
+ 000000C8  BA 00000619 R     1		MOV EDX, OFFSET collected_string	; point to buffer
+ 000000CD  B9 00000032	     1		MOV ECX, SIZEOF collected_string	; specify max characters
+ 000000D2  E8 00000000 E     1		CALL ReadString				; input the string
+ 000000D7  A3 0000064B R     1		MOV string_byte_counter, EAX			; number of characters read is saved
+ 000000DC  58		     1		POP EAX
+ 000000DD  59		     1		POP ECX
+ 000000DE  5A		     1		POP EDX
+ 000000DF  BE 00000619 R			MOV ESI, OFFSET collected_string	; reference to start of string
+ 000000E4  8B 0D 0000064B R			MOV ECX, string_byte_counter		; set counter
+ 000000EA  B8 00000000				MOV EAX, 0							; clear eax for al use
+ 000000EF  BA 00000000				MOV EDX, 0				; set up where to save int
+					
+ 000000F4				_validateString:
+						; convert the string to sdword 
+ 000000F4  FC					CLD									; clear direction flag
+ 000000F5  AC					LODSB	
+
+ 000000F6  3C 30				CMP AL, 48
+ 000000F8  7C 1B				JL	_errorGetString		; check for 0
+
+ 000000FA  3C 39				CMP AL, 57
+ 000000FC  7F 17				JG _errorGetString		; check for 9
+
+ 000000FE  2C 30				SUB AL, 48				; check if still another value
+ 00000100  03 C2				ADD EAX, EDX			; add edx (old mul 10 value) to eax (current pull)
+
+ 00000102  83 F9 01				CMP ECX, 1
+ 00000105  7F 02				JG _anotherVal	
+ 00000107  74 46				JE _lastVal
+
+ 00000109					_anotherVal:	
+ 00000109  BB 0000000A					MOV EBX, 10			; multiply old Al by 10 and resave al to edx
+ 0000010E  F7 E3					MUL EBX
+ 00000110  8B D0					MOV EDX, EAX		; save multiplied eax val in edx for later use
+ 00000112  49						DEC ECX				; decrement counter
+ 00000113  EB DF					JMP _validateString	; go up and find next val
+
+						; 43 is +
+						; 45 is -
+						; 0 is 48
+						; 9 is 57
+						; converted_int
+						; store_array
+
+ 00000115				_errorGetString:
+ 00000115  BA 000003A4 R			MOV EDX, OFFSET user_error_message
+ 0000011A  E8 00000000 E			CALL WriteString
+ 0000011F  E8 00000000 E			CALL CrLf
+						mGetString user_error_prompt, collected_string, string_byte_counter
+ 00000124  52		     1		PUSH EDX
+ 00000125  51		     1		PUSH ECX
+ 00000126  50		     1		PUSH EAX
+ 00000127  BA 00000416 R     1		MOV EDX, OFFSET user_error_prompt
+ 0000012C  E8 00000000 E     1		CALL WriteString
+ 00000131  E8 00000000 E     1		CALL CrLf
+ 00000136  BA 00000619 R     1		MOV EDX, OFFSET collected_string	; point to buffer
+ 0000013B  B9 00000032	     1		MOV ECX, SIZEOF collected_string	; specify max characters
+ 00000140  E8 00000000 E     1		CALL ReadString				; input the string
+ 00000145  A3 0000064B R     1		MOV string_byte_counter, EAX			; number of characters read is saved
+ 0000014A  58		     1		POP EAX
+ 0000014B  59		     1		POP ECX
+ 0000014C  5A		     1		POP EDX
+ 0000014D  EB A5				JMP _validateString
+
+ 0000014F				_lastVal:
+ 0000014F  89 07				MOV [EDI], EAX
+ 00000151  83 C7 04				ADD EDI, 4
+
+ 00000154  61				POPAD
+ 00000155  5D				POP EBP
+ 00000156  C2 0014			RET 20
+ 00000159			ReadVal ENDP
 
 
 
@@ -566,16 +714,34 @@ Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 16:10:37
 				;     procedure altered should be described here. Registers should only be mentioned
 				;     if you are trying to pass data back in them.
 				; ---------------------------------------------------------------------------------
- 00000079			WriteVal PROC
+ 00000159			WriteVal PROC
+ 00000159  55				PUSH EBP
+ 0000015A  8B EC			MOV  EBP, ESP
+ 0000015C  60				PUSHAD
 
- 00000079  C3			RET
- 0000007A			WriteVal ENDP
+					; Do Conversion back to acsii
+
+					; print string
+					;mDisplayString collected_string
+
+ 0000015D  61				POPAD
+ 0000015E  5D				POP EBP
+ 0000015F  C3				RET ;?
+ 00000160			WriteVal ENDP
 
 				END main 
-Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 16:10:37
+Microsoft (R) Macro Assembler Version 14.29.30139.0	    08/12/22 22:51:38
 <Project Six: Dolby Uses String Primitives & Macros     (Pro  Symbols 2 - 1
 
 
+
+
+Macros:
+
+                N a m e                 Type
+
+mDisplayString . . . . . . . . .	Proc
+mGetString . . . . . . . . . . .	Proc
 
 
 Structures and Unions:
@@ -666,8 +832,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 00000619 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 0000007A Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000006BD Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000160 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -713,8 +879,8 @@ HeapCreate . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 HeapDestroy  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapFree . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapSize . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Introduction . . . . . . . . . .	P Near	 0000004D _TEXT	Length= 0000002B Public STDCALL
-  _introLoop . . . . . . . . . .	L Near	 0000005B _TEXT	
+Introduction . . . . . . . . . .	P Near	 00000082 _TEXT	Length= 0000002B Public STDCALL
+  _introLoop . . . . . . . . . .	L Near	 00000090 _TEXT	
 IsDigit  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 LocalFree  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MessageBoxA  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -739,7 +905,12 @@ ReadInt  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ReadKeyFlush . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadKey  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ReadString . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-ReadVal  . . . . . . . . . . . .	P Near	 00000078 _TEXT	Length= 00000001 Public STDCALL
+ReadVal  . . . . . . . . . . . .	P Near	 000000AD _TEXT	Length= 000000AC Public STDCALL
+  _getString . . . . . . . . . .	L Near	 000000B6 _TEXT	
+  _validateString  . . . . . . .	L Near	 000000F4 _TEXT	
+  _anotherVal  . . . . . . . . .	L Near	 00000109 _TEXT	
+  _errorGetString  . . . . . . .	L Near	 00000115 _TEXT	
+  _lastVal . . . . . . . . . . .	L Near	 0000014F _TEXT	
 SetConsoleCursorInfo . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleCursorPosition . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SetConsoleMode . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -776,9 +947,10 @@ WriteStackFrameName  . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-WriteVal . . . . . . . . . . . .	P Near	 00000079 _TEXT	Length= 00000001 Public STDCALL
+WriteVal . . . . . . . . . . . .	P Near	 00000159 _TEXT	Length= 00000007 Public STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 0000004D Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000082 Public STDCALL
+  _10ReadValLoops  . . . . . . .	L Near	 00000037 _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -1000,6 +1172,8 @@ WriteConsole . . . . . . . . . .	Text   	 WriteConsoleA
 black  . . . . . . . . . . . . .	Number	 00000000h   
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
+collected_string . . . . . . . .	Byte	 00000619 _DATA	
+converted_int  . . . . . . . . .	DWord	 00000691 _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
 display_message_1  . . . . . . .	Byte	 00000463 _DATA	
 display_message_2  . . . . . . .	Byte	 000004B0 _DATA	
@@ -1026,7 +1200,10 @@ list_display_message . . . . . .	Byte	 00000521 _DATA
 magenta  . . . . . . . . . . . .	Number	 00000005h   
 mean_message . . . . . . . . . .	Byte	 00000576 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
+store_array  . . . . . . . . . .	DWord	 00000695 _DATA	
+string_byte_counter  . . . . . .	DWord	 0000064B _DATA	
 sum_message  . . . . . . . . . .	Byte	 0000055B _DATA	
+test_line  . . . . . . . . . . .	Byte	 0000064F _DATA	
 user_error_message . . . . . . .	Byte	 000003A4 _DATA	
 user_error_prompt  . . . . . . .	Byte	 00000416 _DATA	
 user_prompt_1  . . . . . . . . .	Byte	 0000035A _DATA	

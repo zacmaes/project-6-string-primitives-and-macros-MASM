@@ -40,30 +40,67 @@ INCLUDE Irvine32.inc
 ; Displays the prompt input parameter to the user and collects their keyboard input into
 ;	a location in memory (the output). 
 ;
-; Preconditions:
+; Preconditions: prompt, emptyStr, and counter values must be established variables
+;		within .data section and passed to this macro.
 ;
 ; Receives:
+;		FOR READSTRING:
+;		-EDX as address of buffer
+;		-ECX as sizeof buffer
+
+;		8] =
+;		8] =
+;		8] =
+;		8] =
+;		8] =
+;		8] =
+;		8] = 
 ;
 ;
-; returns: 
+; returns: counter number of read strings, user inputted string (emptyString)
 ; ---------------------------------------------------------------------------------
-;mGetString MACRO prompt
+mGetString MACRO prompt, emptyStr, counter
+	PUSH EDX
+	PUSH ECX
+	PUSH EAX
+
+	MOV EDX, OFFSET prompt
+	CALL WriteString
+
+	MOV EDX, OFFSET emptyStr	; point to buffer
+	MOV ECX, SIZEOF emptyStr	; specify max characters
+	CALL ReadString				; input the string
+	MOV counter, EAX			; number of characters read is saved
+
+
+	POP EAX
+	POP ECX
+	POP EDX
+	
+
+ENDM
 
 
 
 ; ---------------------------------------------------------------------------------
 ; Name: mDisplayString
 ;
-; Description:
+; Prints the string that is stored in the passed memory location
 ;
-; Preconditions: 
+; Preconditions: string_input must be defined string in .data section
 ;
-; Receives:
+; Receives:	string_input passed in parameter
 ;
 ;
-; returns: 
+; returns: Writes the string_input to the terminal.
 ; ---------------------------------------------------------------------------------
-;mDisplayString MACRO prompt
+mDisplayString MACRO string_input
+	PUSH EDX
+	MOV EDX, OFFSET string_input
+	CALL WriteString
+	CALL CrLf
+	POP EDX
+ENDM
 
 ; (insert constant definitions here)
 
@@ -92,6 +129,15 @@ mean_message		 BYTE "The mean of all values (yes it is truncated!) is: ",0
 
 farewell_message	 BYTE "Dolby is finally free! Master has blessed Dolby with the most generous of gifts ... an old shirt from goodwill!",0
 
+collected_string	 BYTE 50 DUP(0)						; collected user string input buffer
+string_byte_counter  DWORD ?							; holds counter
+
+test_line	BYTE "-----------------------------------------------------------------",0
+
+converted_int		SDWORD ?	; stores the converted int from ReadVal
+store_array			DWORD 10 DUP(?)		; stores all 10 converted ints
+
+
 
 .code
 main PROC
@@ -110,14 +156,25 @@ main PROC
 	Call Introduction
 
 ; ReadVal Procedure.....lloop it
-	;PUSH OFFSET user_prompt_1
-	;PUSH OFFSET user_error_message
-	;PUSH OFFSET user_error_prompt
-	;Call ReadVal
+	MOV ECX, 10			;ReadVal loop counter
+	_10ReadValLoops:
+	PUSH OFFSET user_prompt_1
+	PUSH OFFSET collected_string
+	PUSH string_byte_counter
+	PUSH OFFSET user_error_message
+	PUSH OFFSET user_error_prompt
+	Call ReadVal
+		LOOP _10ReadValLoops
 
 ; WriteVal
 	;Call WriteVal
 
+	
+
+
+	CALL CrLf
+	CALL CrLf
+	CALL CrLf
 
 ; FAREWELL
 MOV EDX, OFFSET farewell_message
@@ -138,13 +195,9 @@ main ENDP
 ;
 ; Introduces the program and instructions to the user.
 ;
-; Preconditions: Preconditions are conditions that need to be true for the
-;     procedure to work, like the type of the input provided or the state a
-;     certain register need to be in.
+; Preconditions: all introduction strings must be defined in data and pushed to stack.
 ;
-; Postconditions: Postconditions are any changes the procedure makes that are not
-;     part of the returns. If any registers are changed and not restored, they
-;     should be described here.
+; Postconditions: N/A
 ;
 ; Receives: 
 ;		[EBP+8]  = OFFSET instruction_6
@@ -157,11 +210,7 @@ main ENDP
 ;		[EBP+36] = OFFSET introduction_2
 ;		[EBP+40] = OFFSET introduction_1
 ;
-; Returns: Returns is the output of the procedure. Because assembly procedures don’t
-;     return data like high-level languages, returns should describe all the data
-;     the procedure intended to change. Parameters and global variables that the
-;     procedure altered should be described here. Registers should only be mentioned
-;     if you are trying to pass data back in them.
+; Returns: Writes strings to the terminal.
 ; ---------------------------------------------------------------------------------
 Introduction PROC
 	PUSH EBP					; Base Pointer	
@@ -187,30 +236,85 @@ Introduction ENDP
 ; ---------------------------------------------------------------------------------
 ; Name: ReadVal
 ;
-; The description of the procedure should be like a section comment, summarizing
-;     the overall goal of the blocks of code within the procedure.
+; ReadVal invokes the mGetString macro to get a string from the user. It then validates 
+;		if the string input can be converted to a number. If not, it asks the user to 
+;		input a new number string.
 ;
-; Preconditions: Preconditions are conditions that need to be true for the
-;     procedure to work, like the type of the input provided or the state a
-;     certain register need to be in.
+; Preconditions: areas in memory where string will be saved are initialized.
+;		prompts are initialized in data, string_byte_counter initialized.
 ;
-; Postconditions: Postconditions are any changes the procedure makes that are not
-;     part of the returns. If any registers are changed and not restored, they
-;     should be described here.
+; Postconditions: N/A
 ;
-; Receives: Receives is like the input of a procedure; it describes everything
-;     the procedure is given to work. Parameters, registers, and global variables
-;     the procedure takes as inputs should be described here.
+; Receives: 
+;			PUSH OFFSET user_prompt_1
+;			PUSH OFFSET collected_string
+;			PUSH string_byte_counter
+;			PUSH OFFSET user_error_message
+;			PUSH OFFSET user_error_prompt
+;			Call ReadVal
 ;
-; Returns: Returns is the output of the procedure. Because assembly procedures don’t
-;     return data like high-level languages, returns should describe all the data
-;     the procedure intended to change. Parameters and global variables that the
-;     procedure altered should be described here. Registers should only be mentioned
-;     if you are trying to pass data back in them.
+; Returns: returns the converted sdword number
 ; ---------------------------------------------------------------------------------
 ReadVal PROC
+	PUSH EBP
+	MOV  EBP, ESP
+	PUSHAD
 
-RET
+	MOV EDI, OFFSET store_array				; point edi to beginning of array
+
+	_getString:
+		mGetString user_prompt_1, collected_string, string_byte_counter
+		MOV ESI, OFFSET collected_string	; reference to start of string
+		MOV ECX, string_byte_counter		; set counter
+		MOV EAX, 0							; clear eax for al use
+		MOV EDX, 0				; set up where to save int
+	
+	_validateString:
+		; convert the string to sdword 
+		CLD									; clear direction flag
+		LODSB	
+
+		CMP AL, 48
+		JL	_errorGetString		; check for 0
+
+		CMP AL, 57
+		JG _errorGetString		; check for 9
+
+		SUB AL, 48				; check if still another value
+		ADD EAX, EDX			; add edx (old mul 10 value) to eax (current pull)
+
+		CMP ECX, 1
+		JG _anotherVal	
+		JE _lastVal
+
+		_anotherVal:	
+			MOV EBX, 10			; multiply old Al by 10 and resave al to edx
+			MUL EBX
+			MOV EDX, EAX		; save multiplied eax val in edx for later use
+			DEC ECX				; decrement counter
+			JMP _validateString	; go up and find next val
+
+		; 43 is +
+		; 45 is -
+		; 0 is 48
+		; 9 is 57
+		; converted_int
+		; store_array
+
+	_errorGetString:
+		MOV EDX, OFFSET user_error_message
+		CALL WriteString
+		CALL CrLf
+		mGetString user_error_prompt, collected_string, string_byte_counter
+		JMP _validateString
+
+	_lastVal:
+		MOV [EDI], EAX
+		ADD EDI, 4
+
+	POPAD
+	POP EBP
+	RET 20
 ReadVal ENDP
 
 
@@ -241,8 +345,18 @@ ReadVal ENDP
 ;     if you are trying to pass data back in them.
 ; ---------------------------------------------------------------------------------
 WriteVal PROC
+	PUSH EBP
+	MOV  EBP, ESP
+	PUSHAD
 
-RET
+	; Do Conversion back to acsii
+
+	; print string
+	;mDisplayString collected_string
+
+	POPAD
+	POP EBP
+	RET ;?
 WriteVal ENDP
 
 END main 
