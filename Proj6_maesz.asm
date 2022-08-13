@@ -135,7 +135,7 @@ string_byte_counter  DWORD ?							; holds counter
 test_line	BYTE "-----------------------------------------------------------------",0
 
 converted_int		SDWORD ?	; stores the converted int from ReadVal
-store_array			DWORD 10 DUP(?)		; stores all 10 converted ints
+store_array			SDWORD 10 DUP(?)		; stores all 10 converted ints
 
 
 
@@ -155,21 +155,26 @@ main PROC
 	PUSH OFFSET instruction_6
 	Call Introduction
 
-; ReadVal Procedure.....lloop it
+; ReadVal Procedure.....loop it
 	MOV ECX, 10			;ReadVal loop counter
+	MOV EDI, OFFSET store_array				; point edi to beginning of array...THIS IS NOT WORKING!!!!!
+	MOV EBX, 0						; save offset count of 0
+	
 	_10ReadValLoops:
-	PUSH OFFSET user_prompt_1
-	PUSH OFFSET collected_string
-	PUSH string_byte_counter
-	PUSH OFFSET user_error_message
-	PUSH OFFSET user_error_prompt
-	Call ReadVal
+		;PUSH OFFSET user_prompt_1
+		;PUSH OFFSET collected_string
+		;PUSH string_byte_counter
+		;PUSH OFFSET user_error_message
+		;PUSH OFFSET user_error_prompt
+		Call ReadVal
+		MOV [EDI], converted_int		;save in array...why does this not work!!!!!!!!!!!!!!!!!
+		ADD EDI, 4
 		LOOP _10ReadValLoops
+
 
 ; WriteVal
 	;Call WriteVal
 
-	
 
 
 	CALL CrLf
@@ -260,7 +265,6 @@ ReadVal PROC
 	MOV  EBP, ESP
 	PUSHAD
 
-	MOV EDI, OFFSET store_array				; point edi to beginning of array
 
 	_getString:
 		mGetString user_prompt_1, collected_string, string_byte_counter
@@ -309,12 +313,12 @@ ReadVal PROC
 		JMP _validateString
 
 	_lastVal:
-		MOV [EDI], EAX
-		ADD EDI, 4
+		MOV converted_int, EAX		; why is this not working!!!!!!!!
+		
 
 	POPAD
 	POP EBP
-	RET 20
+	RET 
 ReadVal ENDP
 
 
@@ -350,6 +354,8 @@ WriteVal PROC
 	PUSHAD
 
 	; Do Conversion back to acsii
+
+	;Unfortunately I ran out of time :(
 
 	; print string
 	;mDisplayString collected_string
