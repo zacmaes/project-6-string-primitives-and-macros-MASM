@@ -1,11 +1,14 @@
-TITLE Project Six: Dolby Uses String Primitives & Macros     (Proj6_maesz.asm)
+TITLE Project Six: Using String Primitives & Macros     (Proj6_maesz.asm)
 
 ; Author: Zachary Maes
 ; Last Modified: August 13, 2022
 ; OSU email address: maesz@oregonstate.edu
 ; Course number/section:   CS271 Section 400
-; Project Number: 6                Due Date: August 12, 2022
-; Description: Two macros (mGetString and mDisplayString) are implemented first and then tested inside main. These macros use ReadString to get input from 
+; Project Number: 6        Due Date: August 12, 2022
+; Description: 
+;			Very challanging assignment! Really fun to dive deep into the content though!
+;			
+;			Two macros (mGetString and mDisplayString) are implemented first and then tested inside main. These macros use ReadString to get input from 
 ;		the user and Writestring to display the saved user inputted data. These macros are invoked within two procedures called ReadVal and WriteVal.
 ;		ReadVal converts the ASCII digit string data gathered by the mGetString macro to its SDWORD numeric value representation, validates that the data 
 ;       has no letters or symbols (only numbers) and then stores/returns the value in a memory variable. WriteVal serves to convert the numeric SDWORD value 
@@ -30,9 +33,21 @@ TITLE Project Six: Dolby Uses String Primitives & Macros     (Proj6_maesz.asm)
 ;			-testing with positive and negative values
 ;			-truncate (drop the decimal value) of the calculated average
 
+;		"THE ONLY GOOD BUG IS A DEAD BUG!" 
+;			-A2070: invalid instruction operands		
+;			-A2081:	missing operand after unary operator
+;			-A2009syntax error in expression
+;			-A2032: invalid use of register
+;			
+;			
+;			
+;			
+;			
+;			
+;			
+
 
 INCLUDE Irvine32.inc
-
 ; (insert macro definitions here)
 ; ---------------------------------------------------------------------------------
 ; Name: mGetString
@@ -45,8 +60,8 @@ INCLUDE Irvine32.inc
 ;
 ; Receives:
 ;		FOR READSTRING:
-;		-EDX as address of buffer
-;		-ECX as sizeof buffer
+;		-address of buffer from stack
+;		-sizeof buffer from stack
 ;
 ;
 ; returns: counter number of read strings, user inputted string (emptyString)
@@ -97,36 +112,34 @@ ENDM
 
 .data
 ; (insert variable definitions here)
-introduction_1		 BYTE "Project Six: Dolby Uses String Primitives & Macros :)",0
-introduction_2		 BYTE "Written By: Zachary Maes		Starring: D.O.L.B.Y. Digit Only Looping Bot Yielder",0
+introduction_1		 BYTE "Project Six: Using String Primitives & Macros :)",0
+introduction_2		 BYTE "Written By: Zachary Maes",0
 
-instruction_0		 BYTE "Dolby kindly greets master and requests that they please read the instructions carefully.",0
-instruction_1		 BYTE "Dolby would like master to please input 10 different signed decimal values into the terminal formatted with one or more of the following options:",0
+instruction_0		 BYTE "Please read the instructions carefully.",0
+instruction_1		 BYTE "Please input 10 different signed decimal values into the terminal formatted with one or more of the following options:",0
 instruction_2		 BYTE "		| 156 | +45 | -760 | 0 |",0
-instruction_3		 BYTE "Dolby requires that each number must fit within a 32 bit register (Dolby begs master to not make them too large!)",0
-instruction_4		 BYTE "Invalid inputs will not be excepted by Dolby and master will kindly need to try again after the error message.",0
-instruction_5		 BYTE "The only non number ASCII characters accepted by Dolby will be the (+) or (-) symbols.",0
-instruction_6		 BYTE "After input, Dolby, with masters permission, will use magic to display values like a list of your inputs, their sum, and their mean value (truncated).",0
+instruction_3		 BYTE "Requires that each number must fit within a 32 bit register (Dont make them too large!)",0
+instruction_4		 BYTE "Invalid inputs will not be excepted. Would you kindly try again after the error message.",0
+instruction_5		 BYTE "The only non number ASCII characters accepted by this program will be the (+) or (-) symbols.",0
+instruction_6		 BYTE "After input, this program displays values like a list of your inputs, their sum, and their mean value (truncated).",0
 
-user_prompt_1		 BYTE "Dolby asks master to please enter one of master's chosen signed numbers: ",0
-user_error_message	 BYTE "ERROR: Dolby does not mean to yell at master, but master has entered the wrong value! Only signed numbers please!",0
-user_error_prompt	 BYTE "It's okay, Dolby believes that master CAN and WILL find success! Try again: ",0
+user_prompt_1		 BYTE "Dobby asks user to please enter one of users chosen signed numbers: ",0
+user_error_message	 BYTE "ERROR: Dobby does not mean to yell at user, but user has entered the wrong value! Only signed numbers please!",0
+user_error_prompt	 BYTE "It's okay, Dolby believes that user CAN and WILL find success! Try again: ",0
 
-display_message_1	 BYTE "Great care was taken by Dolby to provide master with these sensitive values.",0 
-display_message_2    BYTE "Dolby takes great pleasure in serving master! Dolby appreciates master for not striking him with the Nimbus 3000",0
-list_display_message BYTE "Master's valid entered numbers are listed by Dolby below!",0
+display_message_1	 BYTE "Great care was taken to provide you with these sensitive values.",0 
+display_message_2    BYTE "HERE are all the values!",0
+list_display_message BYTE "Valid entered numbers are listed below!",0
 sum_message			 BYTE "The sum of all values is: ",0
 mean_message		 BYTE "The mean of all values (yes it is truncated!) is: ",0
 
-farewell_message	 BYTE "Dolby is finally free! Master has blessed Dolby with the most generous of gifts ... an old shirt from goodwill!",0
+farewell_message	 BYTE "Dobby is finally free! Master Potter has blessed Dobby with the most generous of gifts ... clothes!",0
 
 collected_string	 BYTE 50 DUP(0)			; collected user string input buffer
 string_byte_counter  DWORD ?				; holds counter
 
 converted_int		 DWORD ?				; stores the converted int from ReadVal
 store_array			 DWORD 10 DUP(?)		; stores all 10 converted ints
-
-
 
 .code
 main PROC
@@ -148,6 +161,13 @@ main PROC
 	MOV ECX, 10								;ReadVal loop counter
 	MOV EDI, OFFSET store_array				; point edi to beginning of array...THIS IS NOT WORKING!!!!!
 	
+	; Thought process here:
+	;	Push offset string variables for use in ReadVal loop
+	;		-I am either doing something incorrectly here, in the macro def, or the macro call inside the procedure
+	;	
+	;
+	;
+
 	_10ReadValLoops:
 		PUSH converted_int					; a place to store the converted ints
 		PUSH OFFSET user_prompt_1			
@@ -293,10 +313,26 @@ ReadVal PROC
 	PUSHAD
 
 	_getString:
-		;I also tried this and directly inputting register in macro
-		;MOV EAX, [EBP+24]					; offset user_prompt_1, 
-		;MOV EDX, [EBP+20]					; offset collected_string, 
-		;MOV ECX, [EBP+16]					; string_byte_counter
+		; Things I tried:
+		;	-Current - broken
+		;	mGetString [EBP+24], [EBP+20], [EBP+16].....
+		;		-pull from stack with bass offset
+		
+		;	-other option- broken
+		;    MOV EAX, [EBP+24]			; offset user_prompt_1, 
+		;	 MOV EDX, [EBP+20]			; offset collected_string, 
+		;	 MOV ECX, [EBP+16]			; string_byte_counter
+				;----later
+		;	 mGetString EAX, EDX, ECX.....
+		;		-I also tried this and directly inputting register in macro call
+		;		-saw this method from a post on gradescope, but possibly implemented it wrongly?
+
+		;	-other option- works kindof...but against rubric
+		;	 mGetString user_prompt_1, collected_string, string_byte_counter.....
+		;		-direct from .data variables 
+		;		-see first submission for this one...
+		;		
+		
 		
 	mGetString [EBP+24], [EBP+20], [EBP+16]					; offset user_prompt_1, offset collected_string, string_byte_counter
 
@@ -311,6 +347,19 @@ ReadVal PROC
 		CLD												; clear direction flag and run LODSB
 		LODSB	
 
+		CMP	AL, 45							; catch (+) 43 or (-) 45
+		JE  _minus
+
+		_minus:
+			; something something sign flag?
+			; ...
+
+
+		CMP	AL, 43							; catch (+) 43 or (-) 45
+		JE _plus
+
+		_plus:
+	
 		CMP AL, 48
 		JL	_errorGetString					; check for 0
 
@@ -409,3 +458,5 @@ END main
 
 
 ; YAY FOR SPAGHETTI CODE!
+; Enjoy the month off!
+; TAs thanks for all the hard work in the ed and on teams!
