@@ -1,7 +1,7 @@
 TITLE Project Six: Dolby Uses String Primitives & Macros     (Proj6_maesz.asm)
 
 ; Author: Zachary Maes
-; Last Modified: August 12, 2022
+; Last Modified: August 13, 2022
 ; OSU email address: maesz@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number: 6                Due Date: August 12, 2022
@@ -47,27 +47,19 @@ INCLUDE Irvine32.inc
 ;		FOR READSTRING:
 ;		-EDX as address of buffer
 ;		-ECX as sizeof buffer
-
-;		8] =
-;		8] =
-;		8] =
-;		8] =
-;		8] =
-;		8] =
-;		8] = 
 ;
 ;
 ; returns: counter number of read strings, user inputted string (emptyString)
 ; ---------------------------------------------------------------------------------
-mGetString MACRO prompt, emptyStr, counter
+mGetString MACRO prompt, emptyStr, counter	
 	PUSH EDX
 	PUSH ECX
 	PUSH EAX
 
-	MOV EDX, OFFSET prompt
+	MOV EDX, prompt
 	CALL WriteString
 
-	MOV EDX, OFFSET emptyStr	; point to buffer
+	MOV EDX, emptyStr			; point to buffer
 	MOV ECX, SIZEOF emptyStr	; specify max characters
 	CALL ReadString				; input the string
 	MOV counter, EAX			; number of characters read is saved
@@ -77,7 +69,6 @@ mGetString MACRO prompt, emptyStr, counter
 	POP ECX
 	POP EDX
 	
-
 ENDM
 
 
@@ -129,13 +120,11 @@ mean_message		 BYTE "The mean of all values (yes it is truncated!) is: ",0
 
 farewell_message	 BYTE "Dolby is finally free! Master has blessed Dolby with the most generous of gifts ... an old shirt from goodwill!",0
 
-collected_string	 BYTE 50 DUP(0)						; collected user string input buffer
-string_byte_counter  DWORD ?							; holds counter
+collected_string	 BYTE 50 DUP(0)			; collected user string input buffer
+string_byte_counter  DWORD ?				; holds counter
 
-test_line	BYTE "-----------------------------------------------------------------",0
-
-converted_int		SDWORD ?	; stores the converted int from ReadVal
-store_array			SDWORD 10 DUP(?)		; stores all 10 converted ints
+converted_int		 DWORD ?				; stores the converted int from ReadVal
+store_array			 DWORD 10 DUP(?)		; stores all 10 converted ints
 
 
 
@@ -144,7 +133,7 @@ main PROC
 ; (insert executable instructions here)
 
 ; PROGRAM INTRODUCTION
-	PUSH OFFSET introduction_1
+	PUSH OFFSET introduction_1				; push introduction and instruction strings to the stack for use in Introduction Proc
 	PUSH OFFSET introduction_2
 	PUSH OFFSET instruction_0
 	PUSH OFFSET instruction_1
@@ -155,31 +144,68 @@ main PROC
 	PUSH OFFSET instruction_6
 	Call Introduction
 
-; ReadVal Procedure.....loop it
-	MOV ECX, 10			;ReadVal loop counter
+; ReadVal Procedure.....put a loop on it!
+	MOV ECX, 10								;ReadVal loop counter
 	MOV EDI, OFFSET store_array				; point edi to beginning of array...THIS IS NOT WORKING!!!!!
-	MOV EBX, 0						; save offset count of 0
 	
 	_10ReadValLoops:
-		;PUSH OFFSET user_prompt_1
-		;PUSH OFFSET collected_string
-		;PUSH string_byte_counter
-		;PUSH OFFSET user_error_message
-		;PUSH OFFSET user_error_prompt
+		PUSH converted_int					; a place to store the converted ints
+		PUSH OFFSET user_prompt_1			
+		PUSH OFFSET collected_string		; inputted string
+		PUSH string_byte_counter			; lenght of collected string
+		PUSH OFFSET user_error_message
+		PUSH OFFSET user_error_prompt
 		Call ReadVal
-		MOV [EDI], converted_int		;save in array...why does this not work!!!!!!!!!!!!!!!!!
-		ADD EDI, 4
+		MOV [EDI], converted_int			; save in array...why does this not work!!!!!!!!!!!!!!!!!
+		ADD EDI, 4							; increment array pointer
+
 		LOOP _10ReadValLoops
 
 
 ; WriteVal
-	;Call WriteVal
-
-
-
+	PUSH OFFSET store_array
+	PUSH OFFSET collected_string
+	Call WriteVal
 	CALL CrLf
+
+	MOV EDX, OFFSET display_message_1		  ; Write out the final collected values here
 	CALL CrLf
+	CALL WriteString
 	CALL CrLf
+	
+	MOV EDX, OFFSET display_message_2
+	CALL CrLf
+	CALL WriteString
+	CALL CrLf
+	
+	MOV EDX, OFFSET list_display_message
+	CALL CrLf
+	CALL WriteString
+	CALL CrLf
+
+	MOV ECX, 10									; loop through string, print, and calculate values
+	MOV EAX, 0									; set up accumulator
+	loopingLooper:
+		MOV EDX, OFFSET store_array
+		CALL WriteString
+		ADD EAX, EDX							; accumulate sum
+	LOOP loopingLooper
+
+	MOV EDX, OFFSET sum_message
+	CALL CrLf
+	CALL WriteString
+	CALL CrLf
+
+	CALL WriteDec								; EAX already holds sum here, print eax sum
+	
+	MOV EDX, OFFSET mean_message
+	CALL CrLf
+	CALL WriteString
+	CALL CrLf
+
+	MOV EBX, 10									; set up divisor as 10
+	IDIV EBX									; divide EAX sum value by 10 to get the mean
+			 
 
 ; FAREWELL
 MOV EDX, OFFSET farewell_message
@@ -251,12 +277,13 @@ Introduction ENDP
 ; Postconditions: N/A
 ;
 ; Receives: 
-;			PUSH OFFSET user_prompt_1
-;			PUSH OFFSET collected_string
-;			PUSH string_byte_counter
-;			PUSH OFFSET user_error_message
-;			PUSH OFFSET user_error_prompt
-;			Call ReadVal
+;		[EBP+28] = converted_int
+;		[EBP+24] = OFFSET user_prompt_1
+;		[EBP+20] = OFFSET collected_string
+;		[EBP+16] = string_byte_counter
+;		[EBP+12] = OFFSET user_error_message
+;		[EBP+8] = OFFSET user_error_prompt
+;		Call ReadVal
 ;
 ; Returns: returns the converted sdword number
 ; ---------------------------------------------------------------------------------
@@ -265,104 +292,120 @@ ReadVal PROC
 	MOV  EBP, ESP
 	PUSHAD
 
-
 	_getString:
-		mGetString user_prompt_1, collected_string, string_byte_counter
-		MOV ESI, OFFSET collected_string	; reference to start of string
-		MOV ECX, string_byte_counter		; set counter
-		MOV EAX, 0							; clear eax for al use
-		MOV EDX, 0				; set up where to save int
+		;I also tried this and directly inputting register in macro
+		;MOV EAX, [EBP+24]					; offset user_prompt_1, 
+		;MOV EDX, [EBP+20]					; offset collected_string, 
+		;MOV ECX, [EBP+16]					; string_byte_counter
+		
+	mGetString [EBP+24], [EBP+20], [EBP+16]					; offset user_prompt_1, offset collected_string, string_byte_counter
+
+		_errorStart:
+			MOV ESI, [EBP+20]								; reference to start of string
+			MOV ECX, [EBP+16]								; set counter
+			MOV EAX, 0										; clear eax for al use
+			MOV EDX, 0										; set up where to save int
 	
 	_validateString:
-		; convert the string to sdword 
-		CLD									; clear direction flag
+														; convert the string to sdword 
+		CLD												; clear direction flag and run LODSB
 		LODSB	
 
 		CMP AL, 48
-		JL	_errorGetString		; check for 0
+		JL	_errorGetString					; check for 0
 
 		CMP AL, 57
-		JG _errorGetString		; check for 9
+		JG _errorGetString					; check for 9
 
-		SUB AL, 48				; check if still another value
-		ADD EAX, EDX			; add edx (old mul 10 value) to eax (current pull)
+		SUB AL, 48				
+		ADD EAX, EDX						; add edx (old mul 10 value, set to 0 initially) to eax (current pull)
 
-		CMP ECX, 1
+		CMP ECX, 1							; check if a next number happens with exc counter
 		JG _anotherVal	
 		JE _lastVal
 
-		_anotherVal:	
-			MOV EBX, 10			; multiply old Al by 10 and resave al to edx
-			MUL EBX
-			MOV EDX, EAX		; save multiplied eax val in edx for later use
-			DEC ECX				; decrement counter
-			JMP _validateString	; go up and find next val
-
-		; 43 is +
-		; 45 is -
-		; 0 is 48
-		; 9 is 57
-		; converted_int
-		; store_array
+		_anotherVal:		
+			MOV EBX, 10						; add 10 to ebx for use in MUL instruction
+			MUL EBX							; multiply EAX by EBX(10)
+			MOV EDX, EAX					; saved answer in eax moved to edx for later use
+			DEC ECX							; decrement counter
+			JMP _validateString				; go up and find next val
 
 	_errorGetString:
-		MOV EDX, OFFSET user_error_message
+		MOV EDX, [EBP+12]					; user_error_message
 		CALL WriteString
 		CALL CrLf
-		mGetString user_error_prompt, collected_string, string_byte_counter
-		JMP _validateString
+		CALL CrLf
+
+		MOV EAX, [EBP+8]					; OFFSET user_error_prompt 
+		MOV EDX, [EBP+20]					; offset collected_string, 
+		MOV ECX, [EBP+16]					; string_byte_counter
+		
+
+		mGetString EAX, EDX, ECX			; OFFSET user_error_prompt, offset collected_string, string_byte_counter
+		
+
+		JMP _errorStart						; jump back up and move on withe the validation process
 
 	_lastVal:
-		MOV converted_int, EAX		; why is this not working!!!!!!!!
+		MOV [EBP+28], EAX					; why is this not working!!!!!!!!
 		
 
 	POPAD
 	POP EBP
-	RET 
+	RET 24
 ReadVal ENDP
-
-
-
 
 ; ---------------------------------------------------------------------------------
 ; Name: WriteVal
 ;
-; The description of the procedure should be like a section comment, summarizing
-;     the overall goal of the blocks of code within the procedure.
+; Converts the inputted sdword numeric values to ascii digits and displays them with 
+;the mDisplayString macro, while also saving them in data.
 ;
-; Preconditions: Preconditions are conditions that need to be true for the
-;     procedure to work, like the type of the input provided or the state a
-;     certain register need to be in.
+; Preconditions: inputted strings by user, the store_array is also referenced
 ;
-; Postconditions: Postconditions are any changes the procedure makes that are not
-;     part of the returns. If any registers are changed and not restored, they
-;     should be described here.
+; Postconditions: stores the ascii strings in an array to be used for data display
 ;
-; Receives: Receives is like the input of a procedure; it describes everything
-;     the procedure is given to work. Parameters, registers, and global variables
-;     the procedure takes as inputs should be described here.
+; Receives: 
+;			+12 PUSH OFFSET store_array
+;			+8 PUSH OFFSET collected_string
+;			+4 Call WriteVal
 ;
-; Returns: Returns is the output of the procedure. Because assembly procedures don’t
-;     return data like high-level languages, returns should describe all the data
-;     the procedure intended to change. Parameters and global variables that the
-;     procedure altered should be described here. Registers should only be mentioned
-;     if you are trying to pass data back in them.
+; Returns: returns a Writestring instruction and store_array
 ; ---------------------------------------------------------------------------------
 WriteVal PROC
 	PUSH EBP
 	MOV  EBP, ESP
 	PUSHAD
 
+	MOV ESI, [EBP+12]								; reference to start of string store array
+	MOV ECX, 10										; set counter
+	MOV EAX, 0										; clear eax for al use
+	MOV EDX, 0										; set up where to save int
+	
 	; Do Conversion back to acsii
+	_convertBack:
+		CLD
+		LODSB
 
-	;Unfortunately I ran out of time :(
+		CWD
+		MOV EBX, 10									; set up divisor 10
+		IDIV EBX									; divide EAX by 10
+		
+		ADD EAX, 48									; convert back to ascii
 
-	; print string
-	;mDisplayString collected_string
+		MOV [ESI], EAX								; move string back into place in the store array
+
+		mDisplayString EAX							; print macro
+
+		LOOP _convertBack
 
 	POPAD
 	POP EBP
-	RET ;?
+	RET 8
 WriteVal ENDP
 
 END main 
+
+
+; YAY FOR SPAGHETTI CODE!
